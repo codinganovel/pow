@@ -207,7 +207,7 @@ class FileExplorer:
         if not editor:
             print("\nError: No text editor configured")
             print("Set your default editor: export EDITOR=micro")
-            print("Then restart your shell or run: source ~/.bashrc")
+            print("Then restart your shell or run: source ~/.zshrc")
             input("Press Enter to exit...")
             return
             
