@@ -1,4 +1,5 @@
 # pow
+
 **pow** is a fast TUI file picker for quickly opening text files in your terminal. Navigate with arrow keys, search with fuzzy matching, and launch files directly in your configured editor — then get out of the way.
 > Point, pick, POW! No more tedious path typing.
 ---

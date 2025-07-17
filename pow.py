@@ -7,6 +7,7 @@ Navigate with arrow keys, search with /, open with Enter.
 try:
     import curses
     import os
+    import re
     from pathlib import Path
     from rapidfuzz import fuzz
 except ImportError as e:
@@ -31,6 +32,8 @@ class FileExplorer:
         self.search_mode = False
         self.search_query = ""
         self.filtered_items = []
+        self.note_mode = False
+        self.note_title = ""
         
     def is_text_file(self, path):
         """Check if file is text based on extension or content"""
@@ -53,6 +56,45 @@ class FileExplorer:
                 return False
         
         return False
+    
+    def sanitize_filename(self, title):
+        """Sanitize title for use as filename"""
+        # Replace spaces with hyphens
+        filename = title.replace(' ', '-')
+        # Remove or replace special characters, keep only alphanumeric, hyphens, and underscores
+        filename = re.sub(r'[^a-zA-Z0-9\-_]', '', filename)
+        # Remove consecutive hyphens
+        filename = re.sub(r'-+', '-', filename)
+        # Remove leading/trailing hyphens
+        filename = filename.strip('-')
+        # Ensure it's not empty
+        if not filename:
+            filename = "untitled"
+        return filename
+    
+    def create_note(self, title):
+        """Create a new markdown note with the given title"""
+        if not title.strip():
+            return False
+            
+        filename = self.sanitize_filename(title.strip())
+        file_path = self.current_path / f"{filename}.md"
+        
+        # Check if file already exists
+        counter = 1
+        original_path = file_path
+        while file_path.exists():
+            file_path = self.current_path / f"{filename}-{counter}.md"
+            counter += 1
+        
+        try:
+            # Create empty markdown file
+            file_path.write_text("")
+            # Open in editor
+            self.open_file(file_path)
+            return True
+        except Exception as e:
+            return False
     
     def scan_directory(self):
         """Scan current directory for text files and subdirectories"""
@@ -115,6 +157,13 @@ class FileExplorer:
             stdscr.addstr(row, 0, search_str[:width-1])
             row += 1
             display_items = self.filtered_items
+        elif self.note_mode:
+            note_str = f"New note title: {self.note_title}"
+            if len(note_str) < width - 1:
+                note_str += "▌"
+            stdscr.addstr(row, 0, note_str[:width-1])
+            row += 1
+            display_items = self.items
         else:
             display_items = self.items
             
@@ -169,8 +218,10 @@ class FileExplorer:
                 status = f"[{len(self.filtered_items)} of {len(self.items)} items] • ESC clear • Enter open"
             else:
                 status = f"[0 of {len(self.items)} items] • ESC clear search"
+        elif self.note_mode:
+            status = "Enter note title • ESC cancel • Enter create"
         else:
-            status = f"[{len(self.items)} items] • ↑↓ navigate • Enter open • q quit • / search"
+            status = f"[{len(self.items)} items] • ↑↓ navigate • Enter open • q quit • / search • Ctrl+N new note"
         
         # Show status at bottom
         status_row = height - 1
@@ -228,6 +279,8 @@ class FileExplorer:
             self.cursor_position = 0
             self.search_mode = False
             self.search_query = ""
+            self.note_mode = False
+            self.note_title = ""
             self.scan_directory()
         except PermissionError:
             # Error will be visible in next render
@@ -254,6 +307,20 @@ class FileExplorer:
             elif 32 <= key <= 126:  # Printable ASCII
                 self.search_query += chr(key)
                 self.handle_search(self.search_query)
+        elif self.note_mode:
+            if key == 27:  # Escape
+                self.note_mode = False
+                self.note_title = ""
+            elif key in (127, curses.KEY_BACKSPACE, 8):  # Backspace
+                self.note_title = self.note_title[:-1]
+            elif key in (10, 13):  # Enter
+                if self.note_title.strip():
+                    self.create_note(self.note_title)
+                    # create_note will call open_file which exits the app
+                self.note_mode = False
+                self.note_title = ""
+            elif 32 <= key <= 126:  # Printable ASCII
+                self.note_title += chr(key)
         else:
             if key == ord('q'):
                 return False  # Quit
@@ -261,6 +328,9 @@ class FileExplorer:
                 self.search_mode = True
                 self.search_query = ""
                 self.handle_search("")
+            elif key == 14:  # Ctrl+N
+                self.note_mode = True
+                self.note_title = ""
             elif key == curses.KEY_UP and current_items:
                 self.cursor_position = max(0, self.cursor_position - 1)
             elif key == curses.KEY_DOWN and current_items:
