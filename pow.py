@@ -45,6 +45,9 @@ class FileExplorer:
             try:
                 with open(path, 'rb') as f:
                     chunk = f.read(512)
+                    # Handle empty files
+                    if not chunk:
+                        return True  # Treat empty files as text files
                     try:
                         chunk.decode('utf-8')
                         # Check if mostly printable characters
