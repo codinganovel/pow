@@ -9,6 +9,8 @@
 - Smart text file detection (extensions + content analysis)
 - Opens files directly in your `$EDITOR` and exits cleanly
 - Directory navigation with parent folder support
+- Quick note creation with `Ctrl+N`
+- Daily note functionality with `Ctrl+D`
 - Automatic scrolling for large file lists
 - Pure curses implementation - works everywhere
 ---
@@ -31,6 +33,8 @@ Navigate to any directory and run `pow` to quickly browse and open text files.
 | `↑ ↓`       | Navigate file list             |
 | `Enter`     | Open file or enter directory   |
 | `/`         | Start fuzzy search             |
+| `Ctrl+N`    | Create new note                |
+| `Ctrl+D`    | Open/create daily note         |
 | `ESC`       | Clear search                   |
 | `q`         | Quit                           |
 
@@ -42,6 +46,17 @@ Navigate to any directory and run `pow` to quickly browse and open text files.
 | `Enter`     | Open selected file             |
 | `ESC`       | Exit search mode               |
 | `Backspace` | Delete search characters       |
+
+### Note Creation
+| Key         | Action                          |
+|-------------|--------------------------------|
+| `Ctrl+N`    | Enter note creation mode       |
+| `Type`      | Enter note title               |
+| `Enter`     | Create note and open in editor |
+| `ESC`       | Cancel note creation           |
+
+### Daily Notes
+Press `Ctrl+D` to instantly create or open today's daily note. The filename uses ISO format (e.g., `2025-06-24.md`) and is created in the current directory. If the file already exists, it opens directly.
 
 Files are opened in your configured `$EDITOR` and pow exits immediately, returning you to your shell.
 ---

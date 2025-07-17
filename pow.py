@@ -8,6 +8,7 @@ try:
     import curses
     import os
     import re
+    from datetime import datetime
     from pathlib import Path
     from rapidfuzz import fuzz
 except ImportError as e:
@@ -75,6 +76,10 @@ class FileExplorer:
             filename = "untitled"
         return filename
     
+    def get_daily_note_filename(self):
+        """Generate today's daily note filename in ISO format"""
+        return datetime.now().strftime("%Y-%m-%d.md")
+    
     def create_note(self, title):
         """Create a new markdown note with the given title"""
         if not title.strip():
@@ -98,6 +103,22 @@ class FileExplorer:
             return True
         except Exception as e:
             return False
+    
+    def open_daily_note(self):
+        """Open or create today's daily note"""
+        filename = self.get_daily_note_filename()
+        file_path = self.current_path / filename
+        
+        # Create empty file if it doesn't exist
+        if not file_path.exists():
+            try:
+                file_path.write_text("")
+            except Exception as e:
+                return False
+        
+        # Open in editor
+        self.open_file(file_path)
+        return True
     
     def scan_directory(self):
         """Scan current directory for text files and subdirectories"""
@@ -224,7 +245,7 @@ class FileExplorer:
         elif self.note_mode:
             status = "Enter note title • ESC cancel • Enter create"
         else:
-            status = f"[{len(self.items)} items] • ↑↓ navigate • Enter open • q quit • / search • Ctrl+N new note"
+            status = f"[{len(self.items)} items] • ↑↓ navigate • Enter open • q quit • / search • Ctrl+N/D new daily/note"
         
         # Show status at bottom
         status_row = height - 1
@@ -334,6 +355,8 @@ class FileExplorer:
             elif key == 14:  # Ctrl+N
                 self.note_mode = True
                 self.note_title = ""
+            elif key == 4:  # Ctrl+D
+                self.open_daily_note()
             elif key == curses.KEY_UP and current_items:
                 self.cursor_position = max(0, self.cursor_position - 1)
             elif key == curses.KEY_DOWN and current_items:
